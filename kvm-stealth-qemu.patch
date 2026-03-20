@@ -1,0 +1,153 @@
+diff '--color=auto' -ru --label a/hw/acpi --label b/hw/acpi a/hw/acpi b/hw/acpi
+--- a/hw/acpi
++++ b/hw/acpi
+@@ -1722,11 +1722,11 @@
+     build_append_int_noprefix(array, 0, 4); /* Length */
+     build_append_int_noprefix(array, desc->rev, 1); /* Revision */
+     build_append_int_noprefix(array, 0, 1); /* Checksum */
+-    build_append_padded_str(array, desc->oem_id, 6, '\0'); /* OEMID */
++    build_append_padded_str(array, ACPI_BUILD_APPNAME6, 6, '\0'); /* OEMID */
+     /* OEM Table ID */
+-    build_append_padded_str(array, desc->oem_table_id, 8, '\0');
++    build_append_padded_str(array, "A M I   ", 8, '\0');
+     build_append_int_noprefix(array, 1, 4); /* OEM Revision */
+-    g_array_append_vals(array, ACPI_BUILD_APPNAME8, 4); /* Creator ID */
++    g_array_append_vals(array, "A M I", 4); /* Creator ID */
+     build_append_int_noprefix(array, 1, 4); /* Creator Revision */
+ }
+ 
+@@ -2346,7 +2346,9 @@
+     build_append_gas_from_struct(tbl, &f->gpe0_blk); /* X_GPE0_BLK */
+     build_append_gas(tbl, AML_AS_SYSTEM_MEMORY, 0 , 0, 0, 0); /* X_GPE1_BLK */
+ 
+-    if (f->rev <= 4) {
++    if (f->rev <= 6) {
++		build_append_gas_from_struct(tbl, &f->sleep_ctl);
++		build_append_gas_from_struct(tbl, &f->sleep_sts);
+         goto done;
+     }
+ 
+@@ -2360,7 +2362,7 @@
+     }
+ 
+     /* Hypervisor Vendor Identity */
+-    build_append_padded_str(tbl, "QEMU", 8, '\0');
++    build_append_padded_str(tbl, "Intel", 8, '\0');
+ 
+     /* TODO: extra fields need to be added to support revisions above rev6 */
+     assert(f->rev == 6);
+diff '--color=auto' -ru --label a/hw/acpi --label b/hw/acpi a/hw/acpi b/hw/acpi
+--- a/hw/acpi
++++ b/hw/acpi
+@@ -56,9 +56,9 @@
+ #define ACPI_TABLE_PFX_SIZE sizeof(uint16_t)  /* size of the extra prefix */
+ 
+ static const char unsigned dfl_hdr[ACPI_TABLE_HDR_SIZE - ACPI_TABLE_PFX_SIZE] =
+-    "QEMU\0\0\0\0\1\0"       /* sig (4), len(4), revno (1), csum (1) */
+-    "QEMUQEQEMUQEMU\1\0\0\0" /* OEM id (6), table (8), revno (4) */
+-    "QEMU\1\0\0\0"           /* ASL compiler ID (4), version (4) */
++    "DELL\0\0\0\0\1\0"       /* sig (4), len(4), revno (1), csum (1) */
++    "ASUSASASUSASUS\1\0\0\0" /* OEM id (6), table (8), revno (4) */
++    "DELL\1\0\0\0"           /* ASL compiler ID (4), version (4) */
+     ;
+ 
+ char unsigned *acpi_tables;
+diff '--color=auto' -ru --label a/hw/acpi --label b/hw/acpi a/hw/acpi b/hw/acpi
+--- a/hw/acpi
++++ b/hw/acpi
+@@ -25,6 +25,8 @@
+ void vmgenid_build_acpi(VmGenIdState *vms, GArray *table_data, GArray *guid,
+                         BIOSLinker *linker, const char *oem_id)
+ {
++       //FUCK YOU~~~
++       return;//do this once
+     Aml *ssdt, *dev, *scope, *method, *addr, *if_ctx;
+     uint32_t vgia_offset;
+     QemuUUID guid_le;
+diff '--color=auto' -ru --label a/hw/smbios --label b/hw/smbios a/hw/smbios b/hw/smbios
+--- a/hw/smbios
++++ b/hw/smbios
+@@ -708,7 +708,7 @@
+     t->max_speed = cpu_to_le16(type4.max_speed);
+     t->current_speed = cpu_to_le16(type4.current_speed);
+     t->status = 0x41; /* Socket populated, CPU enabled */
+-    t->processor_upgrade = 0x01; /* Other */
++    t->processor_upgrade = 0x36; /* AM4 */
+     t->l1_cache_handle = cpu_to_le16(0xFFFF); /* N/A */
+     t->l2_cache_handle = cpu_to_le16(0xFFFF); /* N/A */
+     t->l3_cache_handle = cpu_to_le16(0xFFFF); /* N/A */
+diff '--color=auto' -ru --label a/include --label b/include a/include b/include
+--- a/include
++++ b/include
+@@ -4,8 +4,8 @@
+ #include "hw/acpi/acpi-defs.h"
+ #include "hw/acpi/bios-linker-loader.h"
+ 
+-#define ACPI_BUILD_APPNAME6 "BOCHS "
+-#define ACPI_BUILD_APPNAME8 "BXPC    "
++#define ACPI_BUILD_APPNAME6 "ALASKA"
++#define ACPI_BUILD_APPNAME8 "PC8086    "
+ 
+ #define ACPI_BUILD_TABLE_FILE "etc/acpi/tables"
+ #define ACPI_BUILD_RSDP_FILE "etc/acpi/rsdp"
+diff '--color=auto' -ru --label a/include --label b/include a/include b/include
+--- a/include
++++ b/include
+@@ -100,7 +100,7 @@
+  */
+ #define PCI_DEVICE_ID_VIRTIO_10_BASE     0x1040
+ 
+-#define PCI_VENDOR_ID_REDHAT             0x1b36
++#define PCI_VENDOR_ID_REDHAT             0x8086
+ #define PCI_DEVICE_ID_REDHAT_BRIDGE      0x0001
+ #define PCI_DEVICE_ID_REDHAT_SERIAL      0x0002
+ #define PCI_DEVICE_ID_REDHAT_SERIAL2     0x0003
+Tylko w /home/marek/qemu/include/hw/pci: pci.h.orig
+Tylko w /home/marek/qemu/include/hw/pci: pci.h.rej
+diff '--color=auto' -ru --label a/include --label b/include a/include b/include
+--- a/include
++++ b/include
+@@ -263,14 +263,14 @@
+ #define PCI_DEVICE_ID_INTEL_ICH9_7       0x2916
+ #define PCI_DEVICE_ID_INTEL_ICH9_8       0x2918
+ 
+-#define PCI_DEVICE_ID_INTEL_82801I_UHCI1 0x2934
+-#define PCI_DEVICE_ID_INTEL_82801I_UHCI2 0x2935
+-#define PCI_DEVICE_ID_INTEL_82801I_UHCI3 0x2936
+-#define PCI_DEVICE_ID_INTEL_82801I_UHCI4 0x2937
+-#define PCI_DEVICE_ID_INTEL_82801I_UHCI5 0x2938
+-#define PCI_DEVICE_ID_INTEL_82801I_UHCI6 0x2939
+-#define PCI_DEVICE_ID_INTEL_82801I_EHCI1 0x293a
+-#define PCI_DEVICE_ID_INTEL_82801I_EHCI2 0x293c
++#define PCI_DEVICE_ID_INTEL_82801I_UHCI1 0x9934
++#define PCI_DEVICE_ID_INTEL_82801I_UHCI2 0x9935
++#define PCI_DEVICE_ID_INTEL_82801I_UHCI3 0x9936
++#define PCI_DEVICE_ID_INTEL_82801I_UHCI4 0x9937
++#define PCI_DEVICE_ID_INTEL_82801I_UHCI5 0x9938
++#define PCI_DEVICE_ID_INTEL_82801I_UHCI6 0x9939
++#define PCI_DEVICE_ID_INTEL_82801I_EHCI1 0x993a
++#define PCI_DEVICE_ID_INTEL_82801I_EHCI2 0x993c
+ #define PCI_DEVICE_ID_INTEL_82599_SFP_VF 0x10ed
+ 
+ #define PCI_DEVICE_ID_INTEL_P35_MCH      0x29c0
+diff '--color=auto' -ru --label a/include --label b/include a/include b/include
+--- a/include
++++ b/include
+@@ -4,7 +4,7 @@
+ 
+ #include "standard-headers/linux/types.h"
+ 
+-#define FW_CFG_ACPI_DEVICE_ID	"QEMU0002"
++#define FW_CFG_ACPI_DEVICE_ID	"DELL0002"
+ 
+ /* selector key values for "well-known" fw_cfg entries */
+ #define FW_CFG_SIGNATURE	0x00
+@@ -71,7 +71,7 @@
+ #define FW_CFG_DMA_CTL_SELECT	0x08
+ #define FW_CFG_DMA_CTL_WRITE	0x10
+ 
+-#define FW_CFG_DMA_SIGNATURE    0x51454d5520434647ULL /* "QEMU CFG" */
++#define FW_CFG_DMA_SIGNATURE    0x4155535520434647ULL /* "QEMU CFG" */
+ 
+ /* Control as first field allows for different structures selected by this
+  * field, which might be useful in the future

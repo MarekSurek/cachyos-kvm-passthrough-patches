@@ -1,0 +1,157 @@
+diff '--color=auto' -ru --label a/arch/x86/kvm --label b/arch/x86/kvm a/arch/x86/kvm b/arch/x86/kvm
+--- a/arch/x86/kvm
++++ b/arch/x86/kvm
+@@ -1646,38 +1646,23 @@
+ 		entry->edx = 0;
+ 		break;
+ 	}
+-	case KVM_CPUID_SIGNATURE: {
+-		const u32 *sigptr = (const u32 *)KVM_SIGNATURE;
+-		entry->eax = KVM_CPUID_FEATURES;
+-		entry->ebx = sigptr[0];
+-		entry->ecx = sigptr[1];
+-		entry->edx = sigptr[2];
+-		break;
+-	}
+-	case KVM_CPUID_FEATURES:
+-		entry->eax = (1 << KVM_FEATURE_CLOCKSOURCE) |
+-			     (1 << KVM_FEATURE_NOP_IO_DELAY) |
+-			     (1 << KVM_FEATURE_CLOCKSOURCE2) |
+-			     (1 << KVM_FEATURE_ASYNC_PF) |
+-			     (1 << KVM_FEATURE_PV_EOI) |
+-			     (1 << KVM_FEATURE_CLOCKSOURCE_STABLE_BIT) |
+-			     (1 << KVM_FEATURE_PV_UNHALT) |
+-			     (1 << KVM_FEATURE_PV_TLB_FLUSH) |
+-			     (1 << KVM_FEATURE_ASYNC_PF_VMEXIT) |
+-			     (1 << KVM_FEATURE_PV_SEND_IPI) |
+-			     (1 << KVM_FEATURE_POLL_CONTROL) |
+-			     (1 << KVM_FEATURE_PV_SCHED_YIELD) |
+-			     (1 << KVM_FEATURE_ASYNC_PF_INT);
++case KVM_CPUID_SIGNATURE: {
++    entry->eax = 0;
++    entry->ebx = 0;
++    entry->ecx = 0;
++    entry->edx = 0;
++    break;
++}
+ 
+-		if (sched_info_on())
+-			entry->eax |= (1 << KVM_FEATURE_STEAL_TIME);
++case KVM_CPUID_FEATURES:
++    entry->eax = 0;
++    entry->ebx = 0;
++    entry->ecx = 0;
++    entry->edx = 0;
++    break;
+ 
+-		entry->ebx = 0;
+-		entry->ecx = 0;
+-		entry->edx = 0;
+-		break;
+-	case 0x80000000:
+-		entry->eax = min(entry->eax, 0x80000022);
++case 0x80000000:
++    entry->eax = min(entry->eax, 0x80000022);
+ 		/*
+ 		 * Serializing LFENCE is reported in a multitude of ways, and
+ 		 * NullSegClearsBase is not reported in CPUID on Zen2; help
+Tylko w /home/marek/cachyos-6.19.7-1/arch/x86/kvm: Module.symvers
+diff '--color=auto' -ru --label a/arch/x86/kvm --label b/arch/x86/kvm a/arch/x86/kvm b/arch/x86/kvm
+--- a/arch/x86/kvm
++++ b/arch/x86/kvm
+@@ -957,11 +957,11 @@
+ 
+ static void svm_write_tsc_offset(struct kvm_vcpu *vcpu)
+ {
+-	struct vcpu_svm *svm = to_svm(vcpu);
+-
+-	svm->vmcb01.ptr->control.tsc_offset = vcpu->arch.l1_tsc_offset;
+-	svm->vmcb->control.tsc_offset = vcpu->arch.tsc_offset;
+-	vmcb_mark_dirty(svm->vmcb, VMCB_INTERCEPTS);
++        struct vcpu_svm *svm = to_svm(vcpu);
++        u64 noise = (rdtsc() & 0xFFF); /* losowy szum 0-4095 cykli */
++        svm->vmcb01.ptr->control.tsc_offset = vcpu->arch.l1_tsc_offset + noise;
++        svm->vmcb->control.tsc_offset = vcpu->arch.tsc_offset + noise;
++        vmcb_mark_dirty(svm->vmcb, VMCB_INTERCEPTS);
+ }
+ 
+ void svm_write_tsc_multiplier(struct kvm_vcpu *vcpu)
+@@ -1159,6 +1159,7 @@
+ 	if (sev_guest(vcpu->kvm))
+ 		sev_init_vmcb(svm, init_event);
+ 
++	svm_set_intercept(svm, INTERCEPT_RDTSC);
+ 	svm_hv_init_vmcb(vmcb);
+ 
+ 	kvm_make_request(KVM_REQ_RECALC_INTERCEPTS, vcpu);
+@@ -3157,6 +3158,32 @@
+ 	return 0;
+ }
+ 
++static int handle_rdtsc_interception(struct kvm_vcpu *vcpu)
++{
++	static int counter = 0;
++	if (counter++ < 5)
++		pr_info("KVM: RDTSC intercepted!\n");
++	static u64 rdtsc_fake = 0;
++	static u64 rdtsc_prev = 0;
++	u64 rdtsc_real = rdtsc();
++	if (rdtsc_prev != 0) {
++		if (rdtsc_real > rdtsc_prev) {
++			u64 diff = rdtsc_real - rdtsc_prev;
++			u64 fake_diff = diff / 20;
++			rdtsc_fake += fake_diff;
++		}
++	}
++
++	if (rdtsc_fake > rdtsc_real)
++		rdtsc_fake = rdtsc_real;
++
++	rdtsc_prev = rdtsc_real;
++	vcpu->arch.regs[VCPU_REGS_RAX] = rdtsc_fake & -1u;
++	vcpu->arch.regs[VCPU_REGS_RDX] = (rdtsc_fake >> 32) & -1u;
++
++	return kvm_skip_emulated_instruction(vcpu);
++}
++
+ static int (*const svm_exit_handlers[])(struct kvm_vcpu *vcpu) = {
+ 	[SVM_EXIT_READ_CR0]			= cr_interception,
+ 	[SVM_EXIT_READ_CR3]			= cr_interception,
+@@ -3195,6 +3222,7 @@
+ 	[SVM_EXIT_SMI]				= smi_interception,
+ 	[SVM_EXIT_VINTR]			= interrupt_window_interception,
+ 	[SVM_EXIT_RDPMC]			= kvm_emulate_rdpmc,
++	[SVM_EXIT_RDTSC]                        = handle_rdtsc_interception,
+ 	[SVM_EXIT_CPUID]			= kvm_emulate_cpuid,
+ 	[SVM_EXIT_IRET]                         = iret_interception,
+ 	[SVM_EXIT_INVD]                         = kvm_emulate_invd,
+diff '--color=auto' -ru --label a/arch/x86/kvm --label b/arch/x86/kvm a/arch/x86/kvm b/arch/x86/kvm
+--- a/arch/x86/kvm
++++ b/arch/x86/kvm
+@@ -2664,8 +2664,11 @@
+ 
+ u64 kvm_read_l1_tsc(struct kvm_vcpu *vcpu, u64 host_tsc)
+ {
+-	return vcpu->arch.l1_tsc_offset +
+-		kvm_scale_tsc(host_tsc, vcpu->arch.l1_tsc_scaling_ratio);
++        u64 tsc = vcpu->arch.l1_tsc_offset +
++                kvm_scale_tsc(host_tsc, vcpu->arch.l1_tsc_scaling_ratio);
++        /* Add small random noise to hide VM exit timing */
++        tsc += (rdtsc() & 0xFFFF) + 1000;
++        return tsc;
+ }
+ EXPORT_SYMBOL_FOR_KVM_INTERNAL(kvm_read_l1_tsc);
+ 
+Tylko w /home/marek/cachyos-6.19.7-1/arch/x86/include: generated
+diff '--color=auto' -ru --label a/arch/x86/include --label b/arch/x86/include a/arch/x86/include b/arch/x86/include
+--- a/arch/x86/include
++++ b/arch/x86/include
+@@ -8,7 +8,7 @@
+  * should be used to determine that a VM is running under KVM.
+  */
+ #define KVM_CPUID_SIGNATURE	0x40000000
+-#define KVM_SIGNATURE "KVMKVMKVM\0\0\0"
++#define KVM_SIGNATURE "AuthenticAMD"
+ 
+ /* This CPUID returns two feature bitmaps in eax, edx. Before enabling
+  * a particular paravirtualization, the appropriate feature bit should
