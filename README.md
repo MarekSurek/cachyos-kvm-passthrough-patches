@@ -124,8 +124,6 @@ git apply ../kvm-stealth-kernel.patch
 
 ## Disclaimer
 
-## Disclaimer
-
 This project is provided for educational purposes and legitimate use cases such as 
 phone unlocking and diagnostics tools (DFT Pro and similar) that incorrectly block 
 virtual machines.
