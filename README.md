@@ -5,7 +5,6 @@ Reduces VM detection from 12/92 to 7/92 on pafish/vmmdetect.
 
 **Author:** [MarekSurek](https://github.com/MarekSurek)  
 **License:** GPL-2.0  
-**Base:** CachyOS Linux 6.19.7-1
 
 ---
 
@@ -38,7 +37,7 @@ Reduces VM detection from 12/92 to 7/92 on pafish/vmmdetect.
 ## Patches
 
 ### kvm-stealth-kernel.patch
-Applied to CachyOS kernel 6.19.7-1 source.
+Applied to CachyOS kernel source.
 
 Changes:
 - `arch/x86/include/uapi/asm/kvm_para.h` — KVM_SIGNATURE → AuthenticAMD
@@ -49,7 +48,7 @@ Changes:
 - `arch/x86/kvm/x86.c` — TSC noise in kvm_read_l1_tsc
 
 ### kvm-stealth-qemu.patch
-Applied to QEMU 10.2.0 source.
+Applied to QEMU source.
 
 Changes:
 - `hw/acpi/aml-build.c` — ACPI OEM ID: INTEL → ALASKA, PTL → A M I
@@ -64,9 +63,9 @@ Changes:
 
 ```bash
 # Download CachyOS kernel source
-wget https://github.com/CachyOS/linux/releases/download/cachyos-6.19.7-1/cachyos-6.19.7-1.tar.gz
-tar xf cachyos-6.19.7-1.tar.gz
-cd cachyos-6.19.7-1
+tar xf cachyos-*.tar.gz
+cd cachyos-*
+# Replace start with your actual version
 
 # Apply patch
 git apply ../kvm-stealth-kernel.patch
@@ -90,7 +89,7 @@ sudo grub-mkconfig -o /boot/grub/grub.cfg
 ```bash
 git clone https://gitlab.com/qemu-project/qemu.git
 cd qemu
-git checkout v10.2.0
+git checkout *
 git submodule update --init --recursive
 
 # Apply patch
