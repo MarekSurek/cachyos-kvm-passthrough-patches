@@ -65,7 +65,8 @@ Changes:
 # Download CachyOS kernel source
 tar xf cachyos-*.tar.gz
 cd cachyos-*
-# Replace start with your actual version
+
+# Replace star with your actual version
 
 # Apply patch
 git apply ../kvm-stealth-kernel.patch
