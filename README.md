@@ -63,8 +63,8 @@ Changes:
 
 ```bash
 # Download CachyOS kernel source
-tar xf cachyos-*.tar.gz
-cd cachyos-*
+tar xf cachyos-X.tar.gz
+cd cachyos-X
 
 # Replace star with your actual version
 
@@ -90,7 +90,7 @@ sudo grub-mkconfig -o /boot/grub/grub.cfg
 ```bash
 git clone https://gitlab.com/qemu-project/qemu.git
 cd qemu
-git checkout *
+git checkout X
 git submodule update --init --recursive
 
 # Apply patch
